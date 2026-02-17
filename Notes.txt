@@ -1,0 +1,68 @@
+Objectives of the Mod:
+
+If the player is above 50% Hydration from Hydrate or die-drate They will recieve a benefit.
+
+Why is this good for HoD 
+- Players think Hydrate or Diedrate is a lot of negative without a benefit.
+- Players want to be incentivised to do the right thing.
+- Players want a reward for doing the thing.
+
+Benefits include
+- 10% movement speed.
+- 10% Hunger Rate reduction.
+
+What we need to identify: 
+- How Hydration is stored
+
+EntityBehaviorThirst
+
+    float MaxThirst
+    float CurrentThirst
+    float hydrationPercent = thirst.CurrentThirst / thirst.MaxThirst; 
+
+    var thirst = entity.GetBehavior<HydrateOrDiedrate.EntityBehaviorThirst>(); 
+
+- How to adjust Hungerrate
+
+    player.Stats.Set("hungerrate", "hydrationMod", hungerMultiplier, true);
+
+- How to Adjust Walkspeed
+    
+    float walkspeed = entity.Stats.GetBlended("walkspeed");
+
+- How often the Mod should check Hydration
+
+
+
+Hydration Source
+
+    Behavior: EntityBehaviorThirst
+
+    Values: CurrentThirst, MaxThirst
+
+    Hydration %:
+    hydrationPercent = CurrentThirst / MaxThirst
+
+Hunger Rate
+
+    Stat: "hungerrate"
+
+    Your modifier key: "hydrationMod"
+
+Walk Speed
+
+    Stat: "walkspeed"
+
+    Your modifier key: "hydrationMod"
+
+Gameplay Rule
+
+If hydrationPercent > 50%:
+
+    Walk speed = 10% faster
+
+    Hunger rate = 10% slower
+
+Timing Rule
+
+Every 10 seconds, check hydration and apply the bonuses.
