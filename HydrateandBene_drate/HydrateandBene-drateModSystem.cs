@@ -69,13 +69,13 @@ public class HydrateandBene_drateModSystem : ModSystem
         
     }
 
-
-    public override void Start(ICoreAPI api)
+    public override void StartServerSide(ICoreServerAPI api)
     {
         this.api = api;
-        api.World.RegisterGameTickListener(OnGameTick, 2000);
         TryToLoadConfig(api);
+        api.World.RegisterGameTickListener(OnGameTick, 2000);
     }
+
     public class MyConfigData
         {
         public float HungerBuff = -0.1f;
