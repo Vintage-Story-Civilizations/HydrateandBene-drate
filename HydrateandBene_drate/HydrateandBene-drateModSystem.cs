@@ -1,9 +1,11 @@
 ﻿using System;
-using Vintagestory.API.Common;
 using System.Linq;
+using Vintagestory.API.Common;
+using Vintagestory.API.Server;
+using Vintagestory.API.Client;  
 using HydrateOrDiedrate;
-
 namespace HydrateandBene_drate;
+
 
 
 
@@ -12,11 +14,11 @@ public class HydrateandBene_drateModSystem : ModSystem
     float MaxThirst;
     float CurrentThirst;
     float HydrationPercent; // = thirst.CurrentThirst / thirst.MaxThirst; 
-
-    float HBHungerDelta = -0.1f;
-    float HBMoveDelta = 0.1f;
+    MyConfigData config;
+   
     float CheckTimer;
     ICoreAPI api;
+
 
 
     void OnGameTick(float dt)
@@ -44,15 +46,15 @@ public class HydrateandBene_drateModSystem : ModSystem
             MaxThirst = thirst.MaxThirst;
             HydrationPercent = CurrentThirst/ MaxThirst;
             //Debug
-            api.Logger.Debug("Current Thirst: " + CurrentThirst + "Max Thirst: " + MaxThirst + "Hydration Percent: " + HydrationPercent);
+            //api.Logger.Debug("Current Thirst: " + CurrentThirst + "Max Thirst: " + MaxThirst + "Hydration Percent: " + HydrationPercent);
         //3. Apply Behaviour
-            if (HydrationPercent >= 0.5f)
+            if (HydrationPercent >= config.HydratedThreshold)
             {
                 // Character is Hydrated, Set 10% Hunger Reduction and 10% Walkspeed
-                entity.Stats.Set("hungerrate", "hydrationMod", HBHungerDelta, true);
-                entity.Stats.Set("walkspeed", "hydrationMod", HBMoveDelta, true);
+                entity.Stats.Set("hungerrate", "hydrationMod", config.HungerBuff, true);
+                entity.Stats.Set("walkspeed", "hydrationMod", config.MoveBuff, true);
                 //Debug
-                api.Logger.Debug("Applied hunger Delta: " + HBHungerDelta + "and Walkspeed: " + HBMoveDelta);
+                //api.Logger.Debug("Applied hunger Delta: " + HBHungerDelta + "and Walkspeed: " + HBMoveDelta);
             }
             else 
             {
@@ -60,7 +62,7 @@ public class HydrateandBene_drateModSystem : ModSystem
                 entity.Stats.Set("hungerrate", "hydrationMod", 0, true);
                 entity.Stats.Set("walkspeed", "hydrationMod", 0, true);
                 //Debug
-                api.Logger.Debug("Applied hunger Delta: " + 0 + "and Walkspeed: " + 0);
+                //api.Logger.Debug("Applied hunger Delta: " + 0 + "and Walkspeed: " + 0);
             }
 
         }
@@ -72,7 +74,37 @@ public class HydrateandBene_drateModSystem : ModSystem
     {
         this.api = api;
         api.World.RegisterGameTickListener(OnGameTick, 2000);
+        TryToLoadConfig(api);
+    }
+    public class MyConfigData
+        {
+        public float HungerBuff = -0.1f;
+        public float MoveBuff = 0.1f;
+        public float HydratedThreshold = 0.5f;
+
+        }
+
+    private void TryToLoadConfig(ICoreAPI api) 
+{
+    //It is important to surround the LoadModConfig function in a try-catch. 
+    //If loading the file goes wrong, then the 'catch' block is run.
+    try
+    {
+        config = api.LoadModConfig<MyConfigData>("hydrateandbenedrate.json");
+        if (config == null) //if the 'MyConfigData.json' file isn't found...
+        {
+            config = new MyConfigData();
+        }
+        //Save a copy of the mod config.
+        api.StoreModConfig<MyConfigData>(config, "hydrateandbenedrate.json");
+    }
+    catch (Exception e)
+    {
+        //Couldn't load the mod config... Create a new one with default settings, but don't save it.
+        Mod.Logger.Error("Could not load config! Loading default settings instead.");
+        Mod.Logger.Error(e);
+        config = new MyConfigData();
+    }
     }
 
 }
-

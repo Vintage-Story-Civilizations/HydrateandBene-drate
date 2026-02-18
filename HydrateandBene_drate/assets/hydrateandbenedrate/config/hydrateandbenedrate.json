@@ -1,0 +1,5 @@
+{ 
+    "HydratedThreshold": 0.5, 
+    "HungerBuff": -0.1, 
+    "MoveBuff": 0.1 
+}

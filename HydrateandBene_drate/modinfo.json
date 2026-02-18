@@ -7,8 +7,9 @@
         "KonaCoffeeDrgn"
     ],
     "description": "Adds Benefits to being Hydrated in Hydrate or Diedrate",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "dependencies": {
-        "game": "1.21.0"
+        "game": "1.21.0",
+        "hydrateordiedrate": ""
     }
 }
