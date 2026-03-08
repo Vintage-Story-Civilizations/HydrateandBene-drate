@@ -1,16 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using HydrateOrDiedrate;
+
 namespace HydrateandBene_drate;
-
-
 
 public class HydrateandBene_drateModSystem : ModSystem
 {
     MyConfigData? config;
-
     ICoreServerAPI? sapi;
+    Dictionary<string, long> lastApplyTime = new();
 
     public override void StartServerSide(ICoreServerAPI api)
     {
@@ -44,7 +44,10 @@ public class HydrateandBene_drateModSystem : ModSystem
 
     private void OnGameTick(float obj)
     {
-        if (sapi == null) return;
+        if (sapi == null || config == null) return;
+
+        long now = sapi.World.ElapsedMilliseconds;
+        int durationMs = (int)(config.BuffDurationMinutes * 60 * 1000);
 
         foreach (var player in sapi.World.AllOnlinePlayers)
         {
@@ -57,18 +60,28 @@ public class HydrateandBene_drateModSystem : ModSystem
 
             float hydrationPercent = thirst.CurrentThirst / thirst.MaxThirst;
 
-            // Apply Behaviour
-            if (hydrationPercent >= config.HydratedThreshold)
+            // Get Hunger
+            float hungerPercent = entity.WatchedAttributes.GetFloat("hunger") / entity.WatchedAttributes.GetFloat("maxhunger");
+
+            // Check if both > 50%
+            if (hydrationPercent > config.Threshold && hungerPercent > config.Threshold)
             {
-                // Character is hydrated: apply hunger reduction and walk speed buff
-                entity.Stats.Set("hungerrate", "hydrationMod", config.HungerBuff, true);
-                entity.Stats.Set("walkspeed", "hydrationMod", config.MoveBuff, true);
+                // Check if buff not recently applied
+                if (!lastApplyTime.ContainsKey(player.PlayerUID) || now - lastApplyTime[player.PlayerUID] >= durationMs)
+                {
+                    // Apply lowered rates for 10 mins
+                    entity.Stats.Set("hungerrate", "hydrationMod", config.HungerRateMultiplier, false);
+                    entity.Stats.Set(HoDStats.ThirstRateMul, "hydrationMod", config.ThirstRateMultiplier, false);
+                    lastApplyTime[player.PlayerUID] = now;
+                }
             }
             else
             {
-                // Character is not hydrated: remove buffs
-                entity.Stats.Set("hungerrate", "hydrationMod", 0, true);
-                entity.Stats.Set("walkspeed", "hydrationMod", 0, true);
+                // Reset to normal
+                entity.Stats.Set("hungerrate", "hydrationMod", 1f, false);
+                entity.Stats.Set(HoDStats.ThirstRateMul, "hydrationMod", 1f, false);
+                // Remove from lastApplyTime if exists
+                lastApplyTime.Remove(player.PlayerUID);
             }
         }
     }
@@ -76,9 +89,9 @@ public class HydrateandBene_drateModSystem : ModSystem
 
     public class MyConfigData
     {
-        public float HungerBuff = -0.1f;
-        public float MoveBuff = 0.1f;
-        public float HydratedThreshold = 0.5f;
-
+        public float Threshold = 0.5f;
+        public float HungerRateMultiplier = 0.5f; // Lower hunger rate to half
+        public float ThirstRateMultiplier = 0.5f; // Lower thirst rate to half
+        public float BuffDurationMinutes = 10f;
     }
 
